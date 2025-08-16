@@ -3,8 +3,8 @@ from users import User
 
 def get_user_list():
     conn = sqlite3.connect("database.db")
-
     cur = conn.cursor()
+
     cur.execute("SELECT * FROM users")
     rows = cur.fetchall()
     ulist = []
@@ -39,3 +39,14 @@ def remove_user(id: int):
 
     cur.execute(f"DELETE FROM users WHERE id = {id}")
     conn.commit()
+
+def change_user(id: int, property: str, value):
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute(f"UPDATE users SET {property} = '{value}' WHERE id = {id}")
+    conn.commit()
+    cur.execute(f"SELECT {property} FROM users WHERE id = {id}")
+    value = cur.fetchone()
+
+    return { "id": id, property: value[0] }
