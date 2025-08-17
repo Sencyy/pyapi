@@ -24,3 +24,9 @@ class User(BaseModel):
                 "role": f"{self.role}",
                 "salary":f"{self.salary},"
                 }
+
+class Admin(BaseModel):
+    id: int | None = None
+    user: str
+    password: str = "REDACTED"
+    permission: str = "Admin"

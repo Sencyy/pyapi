@@ -1,5 +1,5 @@
 import sqlite3
-from users import User
+from users import User, Admin
 
 def get_user_list():
     conn = sqlite3.connect("database.db")
@@ -50,3 +50,35 @@ def change_user(id: int, property: str, value):
     value = cur.fetchone()
 
     return { "id": id, property: value[0] }
+
+def get_admin_list(include_password=False):
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM admins")
+    rows = cur.fetchall()
+    admlist = []
+
+    if include_password:
+        for row in rows:
+            admlist.append(Admin(user=row[1], password=row[2]))
+    else:
+        for row in rows:
+            admlist.append(Admin(user=row[1]))
+    return admlist
+
+def insert_admin(admin: Admin):
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute(f"INSERT INTO admins (user, password, permission) VALUES ('{admin.user}', '{admin.password}', '{admin.permission}')")
+    conn.commit()
+
+    return cur.lastrowid
+
+def remove_admin(username: str):
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute(f"DELETE FROM users WHERE name = '{username}'")
+    conn.commit()

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from users import User, Gender
+from users import User, Gender, Admin
 import database as db
 from keyhandler import KeyStore
 from datetime import timedelta
@@ -78,4 +78,35 @@ def edit_user(apikey: str, id: int, name=None, age=None, gender=None, role=None,
         if salary:     changes.append(db.change_user(id, 'salary', salary))
 
         return changes
+    else: return invalid_key_response
+
+
+@app.get("/admins")
+def list_admins(apikey: str):
+    if keystore.validate(apikey):
+        admlist = db.get_admin_list()
+        jlist = [item.dict() for item in admlist]
+        return jlist
+    else: return invalid_key_response
+
+@app.post("/admins/new")
+def add_admin(apikey: str, user: str, password: str):
+    if keystore.validate(apikey):
+        id = db.insert_admin(Admin(user=user, password=password))
+        auth.refresh()
+        return {
+            "Success": True,
+            "id": id,
+        }
+    else: return invalid_key_response
+
+@app.delete("/admins/{user}")
+def delete_admin(apikey: str, user: str):
+    if keystore.validate(apikey):
+        db.remove_admin(user)
+        auth.refresh()
+        return {
+            "Success": True,
+            "username": user
+        }
     else: return invalid_key_response
