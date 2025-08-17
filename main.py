@@ -1,15 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from users import User, Gender
 import database as db
 from keyhandler import KeyStore
 from datetime import timedelta
+from auth import Authenticator
+from typing import Annotated
 
+security = HTTPBasic()
+auth = Authenticator()
 keystore = KeyStore()
 key_time = timedelta(minutes=10)
 app = FastAPI()
 
 invalid_key_response = JSONResponse(status_code=401, content="Invalid API key!")
+invalid_credentials_response = JSONResponse(status_code=401, content="Invalid credentials!")
 
 
 @app.get("/")
@@ -17,8 +23,10 @@ def read_root():
     return {"Name": "pyapi"}
 
 @app.get("/authenticate")
-def authenticate_user():
-    return keystore.generate_key(key_time)
+def handle_key(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
+    if auth.authenticate(credentials.username, credentials.password):
+        return keystore.generate_key(key_time)
+    else: return invalid_credentials_response
 
 @app.get("/users")
 def list_users(apikey: str):

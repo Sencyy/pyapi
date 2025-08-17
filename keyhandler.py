@@ -1,12 +1,11 @@
-import random
-import string
+import secrets
 from datetime import datetime, timedelta
 class ApiKey():
     key: str
     expire_date: datetime
 
     def __init__(self, duration: timedelta):
-        self.key = ''.join(random.choices(string.ascii_letters + string.digits, k=24))
+        self.key = secrets.token_urlsafe(24)
         self.expire_date = datetime.now() + duration
 
     def is_valid(self) -> bool:
