@@ -1,50 +1,73 @@
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from users import User, Gender
 import database as db
+from keyhandler import KeyStore
+from datetime import timedelta
 
+keystore = KeyStore()
+key_time = timedelta(minutes=10)
 app = FastAPI()
+
+invalid_key_response = JSONResponse(status_code=401, content="Invalid API key!")
+
 
 @app.get("/")
 def read_root():
     return {"Name": "pyapi"}
 
+@app.get("/authenticate")
+def authenticate_user():
+    return keystore.generate_key(key_time)
+
 @app.get("/users")
-def list_users():
-    ulist = db.get_user_list()
-    jlist = [item.dict() for item in ulist]
-    return jlist
+def list_users(apikey: str):
+    if keystore.validate(apikey):
+        ulist = db.get_user_list()
+        jlist = [item.dict() for item in ulist]
+        return jlist
+    else: return invalid_key_response
 
 @app.post("/users/new", status_code=201)
-def create_user(name: str, age: int, gender: Gender, role: str, salary: int):
-    user = User(name=name, age=age, gender=gender, role=role, salary=salary)
-    id = db.insert_user(user)
+def create_user(apikey: str, name: str, age: int, gender: Gender, role: str, salary: int):
+    if keystore.validate(apikey):
+        user = User(name=name, age=age, gender=gender, role=role, salary=salary)
+        id = db.insert_user(user)
 
-    return {
-        'Success': True,
-        'id': id,
-    }
+        return {
+            'Success': True,
+            'id': id,
+        }
+    else: return invalid_key_response
+
 
 @app.get("/users/{id}")
-def get_user(id: int):
-    user = db.retrieve_user(id)
-    return user.model_dump()
+def get_user(apikey: str, id: int):
+    if keystore.validate(apikey):
+        user = db.retrieve_user(id)
+        return user.model_dump()
+    else: return invalid_key_response
 
 @app.delete("/users/{id}")
-def delete_user(id: int):
-    db.remove_user(id)
-    return {
-        "Success": True,
-        "id": id,
-    }
+def delete_user(apikey: str, id: int):
+    if keystore.validate(apikey):
+        db.remove_user(id)
+        return {
+            "Success": True,
+            "id": id,
+        }
+    else: return invalid_key_response
 
 @app.put("/users/{id}")
-def edit_user(id: int, name=None, age=None, gender=None, role=None, salary=None):
-    changes = []
+def edit_user(apikey: str, id: int, name=None, age=None, gender=None, role=None, salary=None):
+    if keystore.validate(apikey):
+        changes = []
 
-    if name  :     changes.append(db.change_user(id, 'name', name))
-    if age   :     changes.append(db.change_user(id, 'age', age))
-    if gender:     changes.append(db.change_user(id, 'gender', gender))
-    if role  :     changes.append(db.change_user(id, 'role', role))
-    if salary:     changes.append(db.change_user(id, 'salary', salary))
+        if name  :     changes.append(db.change_user(id, 'name', name))
+        if age   :     changes.append(db.change_user(id, 'age', age))
+        if gender:     changes.append(db.change_user(id, 'gender', gender))
+        if role  :     changes.append(db.change_user(id, 'role', role))
+        if salary:     changes.append(db.change_user(id, 'salary', salary))
 
-    return changes
+        return changes
+    else: return invalid_key_response
