@@ -7,7 +7,9 @@ from keyhandler import KeyStore
 from datetime import timedelta
 from auth import Authenticator
 from typing import Annotated
+from logger import Log
 
+log = Log()
 security = HTTPBasic()
 auth = Authenticator()
 keystore = KeyStore()
@@ -25,7 +27,9 @@ def read_root():
 @app.get("/authenticate")
 def handle_key(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
     if auth.authenticate(credentials.username, credentials.password):
-        return keystore.generate_key(key_time)
+        key = keystore.generate_key(key_time, credentials.username)
+        log.loginfo(keystore.issuer(key), f"Authenticated for {key_time}")
+        return key
     else: return invalid_credentials_response
 
 @app.get("/users")
@@ -41,7 +45,7 @@ def create_user(apikey: str, name: str, age: int, gender: Gender, role: str, sal
     if keystore.validate(apikey):
         user = User(name=name, age=age, gender=gender, role=role, salary=salary)
         id = db.insert_user(user)
-
+        log.loginfo(keystore.issuer(apikey), f"Created user {name}")
         return {
             'Success': True,
             'id': id,
@@ -60,6 +64,7 @@ def get_user(apikey: str, id: int):
 def delete_user(apikey: str, id: int):
     if keystore.validate(apikey):
         db.remove_user(id)
+        log.loginfo(keystore.issuer(apikey), f"Deleted user of id {id}")
         return {
             "Success": True,
             "id": id,
@@ -77,6 +82,7 @@ def edit_user(apikey: str, id: int, name=None, age=None, gender=None, role=None,
         if role  :     changes.append(db.change_user(id, 'role', role))
         if salary:     changes.append(db.change_user(id, 'salary', salary))
 
+        log.loginfo(keystore.issuer(apikey), f"Modified user of id {id}")
         return changes
     else: return invalid_key_response
 
@@ -94,6 +100,8 @@ def add_admin(apikey: str, user: str, password: str):
     if keystore.validate(apikey):
         id = db.insert_admin(Admin(user=user, password=password))
         auth.refresh()
+
+        log.loginfo(keystore.issuer(apikey), f"Created admin {user}")
         return {
             "Success": True,
             "id": id,
@@ -105,6 +113,8 @@ def delete_admin(apikey: str, user: str):
     if keystore.validate(apikey):
         db.remove_admin(user)
         auth.refresh()
+
+        log.loginfo(keystore.issuer(apikey), f"Deleted admin of id {id}")
         return {
             "Success": True,
             "username": user

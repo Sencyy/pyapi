@@ -1,6 +1,9 @@
 import sqlite3
 from users import User, Admin
 
+class AdminNotFoundException(Exception):
+    pass
+
 def get_user_list():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
@@ -75,6 +78,23 @@ def insert_admin(admin: Admin):
     conn.commit()
 
     return cur.lastrowid
+
+def retrieve_admin(user=None, id=None) -> Admin:
+    if user != None:
+        conn = sqlite3.connect("database.db")
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT * FROM admins WHERE user = '{user}'")
+        admin = cur.fetchone()
+        return Admin(id=admin[0], user=admin[1], permission=admin[3])
+    elif id != None:
+        conn = sqlite3.connect("database.db")
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM users WHERE id = {id}")
+        admin = cur.fetchone()
+        return Admin(id=admin[0], user=admin[1], permission=admin[3])
+    else:
+        raise AdminNotFoundException("Key issuer not found in database!")
 
 def remove_admin(username: str):
     conn = sqlite3.connect("database.db")
