@@ -2,6 +2,7 @@ import secrets
 import database as db
 from datetime import datetime, timedelta
 from users import Admin
+from os import getenv
 class ApiKey():
     key: str
     issuer: Admin
@@ -32,7 +33,10 @@ class KeyStore:
             return False
 
     def generate_key(self, duration: timedelta, issuer: str) -> str:
-        key_issuer = db.retrieve_admin(user=issuer)
+        if issuer == getenv("AUTH_USER"):
+            key_issuer = Admin.master_admin()
+        else:
+            key_issuer = db.retrieve_admin(user=issuer)
         new_key = ApiKey(duration, key_issuer)
         self.store[new_key.key] = new_key
         return new_key.key

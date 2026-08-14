@@ -1,6 +1,7 @@
 import secrets
 from os import getenv
 import database as db
+from typing import Optional
 
 class UndefinedCredentialsException(Exception):
     pass
@@ -17,23 +18,33 @@ class Authenticator:
         for admin in db.get_admin_list(include_password=True):
             self.admins[admin.user] = admin.password
 
-        if (self.master_user == None or self.master_passwd == None) and len(self.admins) == 0:
+        if (self.master_user == None or self.master_passwd == None) and len(self.admins) == 1:
             raise UndefinedCredentialsException("Please set AUTH_USER and AUTH_PASS environment variables for defining the master user")
 
     def authenticate(self, user: str, password: str) -> bool:
+        is_master_admin = False
         if self.master_user != None or self.master_passwd != None:
             passwd_is_correct = secrets.compare_digest(password, self.master_passwd)
             user_is_correct = secrets.compare_digest(user, self.master_user)
+            if passwd_is_correct and user_is_correct:
+                is_master_admin = True
 
         else:
             user_passwd = self.admins.get(user)
             if user_passwd != None:
                 user_is_correct = True
                 passwd_is_correct = secrets.compare_digest(password, user_passwd)
-        if user_is_correct and passwd_is_correct: return True
-        else:                                     return False
+        
+        if is_master_admin:
+            return True
+        elif user_is_correct and passwd_is_correct:
+            return True
+        else:
+            return False
 
     def refresh(self):
         self.admins = {}
         for admin in db.get_admin_list(include_password=True):
             self.admins[admin.user] = admin.password
+        
+            

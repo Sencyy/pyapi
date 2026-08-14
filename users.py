@@ -28,5 +28,14 @@ class User(BaseModel):
 class Admin(BaseModel):
     id: int | None = None
     user: str
-    password: str = "REDACTED"
+    password: str | None = "REDACTED"
     permission: str = "Admin"
+
+    @classmethod
+    def master_admin(cls):
+        master = cls(id=1, user="MASTER_ADMIN", password=None)
+        # master.id = 1
+        # master.user = "MASTER_ADMIN"
+        # password = None
+
+        return master
