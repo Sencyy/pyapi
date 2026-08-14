@@ -112,6 +112,8 @@ def add_admin(apikey: str, user: str, password: str):
 @app.delete("/admins/{user}")
 def delete_admin(apikey: str, user: str):
     if keystore.validate(apikey):
+        if len(db.get_admin_list()) == 1:
+            return JSONResponse(status_code=405, content="Cannot delete the only admin in the system!")
         db.remove_admin(user)
         auth.refresh()
 
