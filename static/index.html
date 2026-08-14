@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pyapi console</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #dcdfe4;
+    --text: #1f2430;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --danger: #dc2626;
+    --ok: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 16px; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--text);
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .field { display: flex; flex-direction: column; }
+  button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+  }
+  button:hover { background: var(--accent-dark); }
+  button.secondary { background: #eef1f5; color: var(--text); }
+  button.secondary:hover { background: #e2e6ec; }
+  button.danger { background: var(--danger); }
+  button.danger:hover { filter: brightness(0.9); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  #status {
+    margin-top: 12px;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    display: none;
+  }
+  #status.ok { display: block; background: #ecfdf5; color: var(--ok); border: 1px solid #bbf7d0; }
+  #status.warn { display: block; background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+  #status.err { display: block; background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.actions { white-space: nowrap; }
+  td.actions button { margin-right: 6px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    background: #e0e7ff;
+    color: var(--accent-dark);
+  }
+  #login.hidden, #app.hidden { display: none; }
+  .empty { text-align: center; color: var(--muted); padding: 16px 0; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>pyapi console</h1>
+
+  <div id="status"></div>
+
+  <section class="card" id="login">
+    <h2>Sign in</h2>
+    <p class="muted">Authenticate to obtain a temporary API key (valid 10 minutes).</p>
+    <div class="row">
+      <div class="field">
+        <label>Username</label>
+        <input id="username" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="password" type="password" autocomplete="current-password">
+      </div>
+      <button id="login-btn" style="align-self:flex-end">Sign in</button>
+    </div>
+  </section>
+
+  <section class="card hidden" id="app">
+    <div class="toolbar">
+      <h2 style="margin:0">API key <span class="badge" id="key-badge">active</span></h2>
+      <div class="row">
+        <span class="muted" id="key-expiry"></span>
+        <button class="secondary danger" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="users-card">
+    <div class="toolbar">
+      <h2>Users</h2>
+      <button class="secondary" id="refresh-users">Refresh</button>
+    </div>
+
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Name</label><input id="u-name"></div>
+      <div class="field"><label>Age</label><input id="u-age" type="number" min="0"></div>
+      <div class="field"><label>Gender</label>
+        <select id="u-gender">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+      <div class="field"><label>Role</label><input id="u-role"></div>
+      <div class="field"><label>Salary</label><input id="u-salary" type="number" min="0"></div>
+      <div class="field" style="align-self:flex-end">
+        <div class="row">
+          <button id="u-submit">Add user</button>
+          <button class="secondary hidden" id="u-cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="users-table"></div>
+  </section>
+
+  <section class="card hidden" id="admins-card">
+    <div class="toolbar">
+      <h2>Admins</h2>
+      <button class="secondary" id="refresh-admins">Refresh</button>
+    </div>
+
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Username</label><input id="a-user"></div>
+      <div class="field"><label>Password</label><input id="a-pass" type="password"></div>
+      <button id="a-submit" style="align-self:flex-end">Add admin</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Username</th><th>Permission</th><th></th></tr>
+      </thead>
+      <tbody id="admins-body"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  const KEY_DURATION_MS = 10 * 60 * 1000;
+
+  let apiKey = sessionStorage.getItem("pyapi_key") || "";
+  let keyExpiry = Number(sessionStorage.getItem("pyapi_expiry") || 0);
+  let timerId = null;
+  let editingId = null;
+
+  const $ = (id) => document.getElementById(id);
+  const statusEl = $("status");
+
+  function showStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = kind || "";
+    if (!msg) statusEl.className = "";
+  }
+
+  async function api(path, { method = "GET", params = {} } = {}) {
+    const url = new URL(path, window.location.origin);
+    url.searchParams.set("apikey", apiKey);
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== "") url.searchParams.set(k, v);
+    }
+    const res = await fetch(url, { method });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { data = text; }
+    if (res.status === 401) {
+      showStatus("Auth failed — please sign in again.", "err");
+      logout();
+      throw new Error(data);
+    }
+    if (!res.ok) {
+      const msg = typeof data === "string" ? data : JSON.stringify(data);
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+
+  function setAuthedUI() {
+    $("login").classList.toggle("hidden", !!apiKey);
+    $("app").classList.toggle("hidden", !apiKey);
+    $("users-card").classList.toggle("hidden", !apiKey);
+    $("admins-card").classList.toggle("hidden", !apiKey);
+    if (apiKey) {
+      startExpiryTimer();
+      loadAll();
+    }
+  }
+
+  function startExpiryTimer() {
+    clearInterval(timerId);
+    const tick = () => {
+      const remain = Math.max(0, keyExpiry - Date.now());
+      const secs = Math.floor(remain / 1000);
+      const m = Math.floor(secs / 60);
+      const s = String(secs % 60).padStart(2, "0");
+      $("key-expiry").textContent = `Expires in ${m}:${s}`;
+      if (remain <= 0) {
+        showStatus("API key expired — please sign in again.", "warn");
+        logout();
+      }
+    };
+    tick();
+    timerId = setInterval(tick, 1000);
+  }
+
+  function logout() {
+    clearInterval(timerId);
+    apiKey = "";
+    keyExpiry = 0;
+    sessionStorage.removeItem("pyapi_key");
+    sessionStorage.removeItem("pyapi_expiry");
+    setAuthedUI();
+  }
+
+  async function loadAll() {
+    try {
+      await Promise.all([loadUsers(), loadAdmins()]);
+    } catch (e) {
+      if (e.message) showStatus(e.message, "err");
+    }
+  }
+
+  async function loadUsers() {
+    const users = await api("/users");
+    const box = $("users-table");
+    if (users.length === 0) {
+      box.innerHTML = '<div class="empty">No users yet. Add one above.</div>';
+      return;
+    }
+    let html = "<table><thead><tr><th>ID</th><th>Name</th><th>Age</th><th>Gender</th><th>Role</th><th>Salary</th><th></th></tr></thead><tbody>";
+    for (const u of users) {
+      html += `<tr>
+        <td>${esc(u.id)}</td>
+        <td>${esc(u.name)}</td>
+        <td>${esc(u.age)}</td>
+        <td>${esc(u.gender)}</td>
+        <td>${esc(u.role)}</td>
+        <td>${esc(u.salary)}</td>
+        <td class="actions">
+          <button class="secondary" data-action="edit" data-id="${esc(u.id)}">Edit</button>
+          <button class="danger" data-action="delete" data-id="${esc(u.id)}">Delete</button>
+        </td>
+      </tr>`;
+    }
+    html += "</tbody></table>";
+    box.innerHTML = html;
+  }
+
+  async function loadAdmins() {
+    const admins = await api("/admins");
+    const box = $("admins-body");
+    box.innerHTML = admins.length === 0
+      ? '<tr><td colspan="4" class="empty">No admins.</td></tr>'
+      : admins.map((a) => `<tr>
+          <td>${esc(a.id)}</td>
+          <td>${esc(a.user)}</td>
+          <td>${esc(a.permission)}</td>
+          <td class="actions"><button class="danger" data-action="delete" data-name="${esc(a.user)}">Delete</button></td>
+        </tr>`).join("");
+  }
+
+  function resetUserForm() {
+    editingId = null;
+    ["u-name", "u-age", "u-role", "u-salary"].forEach((id) => ($(id).value = ""));
+    $("u-gender").value = "Male";
+    $("u-submit").textContent = "Add user";
+    $("u-cancel").classList.add("hidden");
+  }
+
+  async function submitUser() {
+    const name = $("u-name").value.trim();
+    const age = $("u-age").value;
+    const gender = $("u-gender").value;
+    const role = $("u-role").value.trim();
+    const salary = $("u-salary").value;
+    if (!name || !age || !role || !salary) {
+      showStatus("Please fill in name, age, role and salary.", "warn");
+      return;
+    }
+    try {
+      if (editingId !== null) {
+        await api(`/users/${editingId}`, {
+          method: "PUT",
+          params: { name, age, gender, role, salary },
+        });
+        showStatus(`User ${editingId} updated.`, "ok");
+      } else {
+        const r = await api("/users/new", {
+          method: "POST",
+          params: { name, age: Number(age), gender, role, salary: Number(salary) },
+        });
+        showStatus(`User created (id ${r.id}).`, "ok");
+      }
+      resetUserForm();
+      await loadUsers();
+    } catch (e) {
+      showStatus(e.message, "err");
+    }
+  }
+
+  function editUser(id) {
+    editingId = id;
+    const rows = document.querySelectorAll("#users-table tbody tr");
+    for (const tr of rows) {
+      const cells = tr.querySelectorAll("td");
+      if (Number(cells[0].textContent) === id) {
+        $("u-name").value = cells[1].textContent.trim();
+        $("u-age").value = cells[2].textContent.trim();
+        $("u-gender").value = cells[3].textContent.trim();
+        $("u-role").value = cells[4].textContent.trim();
+        $("u-salary").value = cells[5].textContent.trim();
+        break;
+      }
+    }
+    $("u-submit").textContent = "Update user";
+    $("u-cancel").classList.remove("hidden");
+  }
+
+  async function deleteUser(id) {
+    if (!confirm(`Delete user ${id}?`)) return;
+    try {
+      await api(`/users/${id}`, { method: "DELETE" });
+      showStatus(`User ${id} deleted.`, "ok");
+      await loadUsers();
+    } catch (e) {
+      showStatus(e.message, "err");
+    }
+  }
+
+  async function submitAdmin() {
+    const user = $("a-user").value.trim();
+    const password = $("a-pass").value;
+    if (!user || !password) {
+      showStatus("Please fill in both username and password.", "warn");
+      return;
+    }
+    try {
+      const r = await api("/admins/new", {
+        method: "POST",
+        params: { user, password },
+      });
+      showStatus(`Admin ${user} created (id ${r.id}).`, "ok");
+      $("a-user").value = "";
+      $("a-pass").value = "";
+      await loadAdmins();
+    } catch (e) {
+      showStatus(e.message, "err");
+    }
+  }
+
+  async function deleteAdmin(user) {
+    if (!confirm(`Delete admin "${user}"?`)) return;
+    try {
+      await api(`/admins/${encodeURIComponent(user)}`, { method: "DELETE" });
+      showStatus(`Admin ${user} deleted.`, "ok");
+      await loadAdmins();
+    } catch (e) {
+      showStatus(e.message, "err");
+    }
+  }
+
+  $("login-btn").addEventListener("click", async () => {
+    const username = $("username").value.trim();
+    const password = $("password").value;
+    if (!username || !password) {
+      showStatus("Enter a username and password.", "warn");
+      return;
+    }
+    $("login-btn").disabled = true;
+    try {
+      const res = await fetch("/authenticate", {
+        headers: {
+          Authorization: "Basic " + btoa(unescape(encodeURIComponent(username + ":" + password))),
+        },
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { data = text; }
+      if (!res.ok) {
+        showStatus(typeof data === "string" ? data : "Authentication failed.", "err");
+        return;
+      }
+      apiKey = data;
+      keyExpiry = Date.now() + KEY_DURATION_MS;
+      sessionStorage.setItem("pyapi_key", apiKey);
+      sessionStorage.setItem("pyapi_expiry", String(keyExpiry));
+      showStatus("Authenticated. API key acquired.", "ok");
+      setAuthedUI();
+    } catch (e) {
+      showStatus("Could not reach the API: " + e.message, "err");
+    } finally {
+      $("login-btn").disabled = false;
+    }
+  });
+
+  $("logout-btn").addEventListener("click", logout);
+  $("refresh-users").addEventListener("click", () => loadUsers().catch((e) => showStatus(e.message, "err")));
+  $("refresh-admins").addEventListener("click", () => loadAdmins().catch((e) => showStatus(e.message, "err")));
+  $("u-submit").addEventListener("click", submitUser);
+  $("u-cancel").addEventListener("click", resetUserForm);
+  $("a-submit").addEventListener("click", submitAdmin);
+  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") $("login-btn").click(); });
+
+  $("users-table").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    if (btn.dataset.action === "edit") editUser(id);
+    else if (btn.dataset.action === "delete") deleteUser(id);
+  });
+
+  $("admins-body").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    deleteAdmin(btn.dataset.name);
+  });
+
+  setAuthedUI();
+</script>
+</body>
+</html>

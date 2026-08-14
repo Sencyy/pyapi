@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from pathlib import Path
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from users import User, Gender, Admin
 import database as db
@@ -22,7 +23,7 @@ invalid_credentials_response = JSONResponse(status_code=401, content="Invalid cr
 
 @app.get("/")
 def read_root():
-    return {"Name": "pyapi"}
+    return FileResponse(Path(__file__).parent / "static" / "index.html")
 
 @app.get("/authenticate")
 def handle_key(credentials: Annotated[HTTPBasicCredentials, Depends(security)]):
@@ -114,7 +115,7 @@ def delete_admin(apikey: str, user: str):
         db.remove_admin(user)
         auth.refresh()
 
-        log.loginfo(keystore.issuer(apikey), f"Deleted admin of id {id}")
+        log.loginfo(keystore.issuer(apikey), f"Deleted admin {user}")
         return {
             "Success": True,
             "username": user
