@@ -53,6 +53,12 @@ When you modify this repository, you MUST keep this file up to date:
 
 ## Frontend
 
+### 2026-08-14 — Hide delete button for the only remaining admin
+- `loadAdmins()` in `static/index.html` now renders the per-row Delete button only when the
+  admin list has more than one entry, leaving an empty actions cell otherwise.
+- Reason: mirror the backend guard in `main.py` that rejects deleting the sole admin (405), so
+  users are not presented with an action the API will refuse.
+
 ### 2026-08-14 — XSS hardening & cleanup
 - Replaced inline `onclick` handlers in `static/index.html` with event delegation: buttons now carry
   `data-action`/`data-id`/`data-name` attributes and clicks are handled by `addEventListener` on the

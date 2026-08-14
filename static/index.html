@@ -290,13 +290,14 @@
   async function loadAdmins() {
     const admins = await api("/admins");
     const box = $("admins-body");
+    const canDelete = admins.length > 1;
     box.innerHTML = admins.length === 0
       ? '<tr><td colspan="4" class="empty">No admins.</td></tr>'
       : admins.map((a) => `<tr>
           <td>${esc(a.id)}</td>
           <td>${esc(a.user)}</td>
           <td>${esc(a.permission)}</td>
-          <td class="actions"><button class="danger" data-action="delete" data-name="${esc(a.user)}">Delete</button></td>
+          <td class="actions">${canDelete ? `<button class="danger" data-action="delete" data-name="${esc(a.user)}">Delete</button>` : ""}</td>
         </tr>`).join("");
   }
 
