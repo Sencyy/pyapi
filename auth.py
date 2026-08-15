@@ -25,21 +25,17 @@ class Authenticator:
     def authenticate(self, user: str, password: str) -> bool:
         user_is_correct   = False
         passwd_is_correct = False
-        is_master_admin   = False
 
-        print(self.admins)
-
-        if self.master_user != None or self.master_passwd != None:
+        if self.master_user != None and self.master_passwd != None:
             passwd_is_correct = secrets.compare_digest(password, self.master_passwd)
             user_is_correct = secrets.compare_digest(user, self.master_user)
             if passwd_is_correct and user_is_correct:
                 return True
 
-        else:
-            user_passwd = self.admins.get(user)
-            if user_passwd != None:
-                user_is_correct = True
-                passwd_is_correct = secrets.compare_digest(sha256(bytes(password, "utf-8")).hexdigest(), user_passwd)
+        user_passwd = self.admins.get(user)
+        if user_passwd != None:
+            user_is_correct = True
+            passwd_is_correct = secrets.compare_digest(sha256(bytes(password, "utf-8")).hexdigest(), user_passwd)
     
         if user_is_correct and passwd_is_correct:
             return True
