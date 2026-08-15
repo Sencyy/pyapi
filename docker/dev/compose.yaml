@@ -1,0 +1,12 @@
+services:
+  pyapi:
+    build:
+      context: ../../
+      dockerfile: ./docker/dev/Dockerfile
+    ports:
+      - "8000:8080"
+    volumes:
+      - ../../src:/app/src
+    environment:
+      - AUTH_USER=admin
+      - AUTH_PASS=admin
