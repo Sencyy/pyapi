@@ -22,7 +22,10 @@ class Authenticator:
             raise UndefinedCredentialsException("Please set AUTH_USER and AUTH_PASS environment variables for defining the master user")
 
     def authenticate(self, user: str, password: str) -> bool:
-        is_master_admin = False
+        user_is_correct   = False
+        passwd_is_correct = False
+        is_master_admin   = False
+
         if self.master_user != None or self.master_passwd != None:
             passwd_is_correct = secrets.compare_digest(password, self.master_passwd)
             user_is_correct = secrets.compare_digest(user, self.master_user)
