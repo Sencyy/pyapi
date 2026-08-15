@@ -1,4 +1,5 @@
 import sqlite3
+from hashlib import sha256
 from users import User, Admin
 
 class AdminNotFoundException(Exception):
@@ -81,7 +82,7 @@ def insert_admin(admin: Admin):
 
         cur.execute(
             "INSERT INTO admins (user, password, permission) VALUES (?, ?, ?)",
-            (admin.user, admin.password, admin.permission),
+            (admin.user, sha256(bytes(admin.password, "utf-8")).hexdigest(), admin.permission),
         )
 
         return cur.lastrowid
