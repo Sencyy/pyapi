@@ -11,5 +11,8 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 RUN sh create_db.sh
+COPY static /app/static
+
+EXPOSE 8000
 
 CMD ["fastapi", "dev", "src/main.py"]

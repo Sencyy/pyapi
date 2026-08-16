@@ -1,14 +1,16 @@
 import sqlite3
 from hashlib import sha256
+from pathlib import Path
 from users import User, Admin
 
 class AdminNotFoundException(Exception):
     pass
 
 ALLOWED_USER_PROPERTIES = {"name", "age", "gender", "role", "salary"}
+DB_PATH = Path(__file__).resolve().parent.parent / "database.db"
 
 def get_user_list():
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute("SELECT * FROM users")
@@ -23,7 +25,7 @@ def get_user_list():
 
 
 def insert_user(user: User):
-   with sqlite3.connect("database.db") as conn:
+   with sqlite3.connect(DB_PATH) as conn:
        cur = conn.cursor()
 
        cur.execute(
@@ -34,7 +36,7 @@ def insert_user(user: User):
        return cur.lastrowid
 
 def retrieve_user(id):
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute("SELECT * FROM users WHERE id = ?", (id,))
@@ -42,7 +44,7 @@ def retrieve_user(id):
         return User(id=user[0], name=user[1], age=user[2], gender=user[3], role=user[4], salary=user[5])
 
 def remove_user(id: int):
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute("DELETE FROM users WHERE id = ?", (id,))
@@ -51,7 +53,7 @@ def change_user(id: int, property: str, value):
     if property not in ALLOWED_USER_PROPERTIES:
         raise ValueError(f"Invalid user property: {property}")
 
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute(f"UPDATE users SET {property} = ? WHERE id = ?", (value, id))
@@ -61,7 +63,7 @@ def change_user(id: int, property: str, value):
         return { "id": id, property: value[0] }
 
 def get_admin_list(include_password=False):
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute("SELECT * FROM admins")
@@ -77,7 +79,7 @@ def get_admin_list(include_password=False):
         return admlist
 
 def insert_admin(admin: Admin):
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute(
@@ -89,14 +91,14 @@ def insert_admin(admin: Admin):
 
 def retrieve_admin(user=None, id=None) -> Admin:
     if user != None:
-        with sqlite3.connect("database.db") as conn:
+        with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
 
             cur.execute("SELECT * FROM admins WHERE user = ?", (user,))
             admin = cur.fetchone()
             return Admin(id=admin[0], user=admin[1], permission=admin[3])
     elif id != None:
-        with sqlite3.connect("database.db") as conn:
+        with sqlite3.connect(DB_PATH) as conn:
             cur = conn.cursor()
             cur.execute("SELECT * FROM admins WHERE id = ?", (id,))
             admin = cur.fetchone()
@@ -105,7 +107,7 @@ def retrieve_admin(user=None, id=None) -> Admin:
         raise AdminNotFoundException("Key issuer not found in database!")
 
 def remove_admin(username: str):
-    with sqlite3.connect("database.db") as conn:
+    with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
 
         cur.execute("DELETE FROM admins WHERE user = ?", (username,))

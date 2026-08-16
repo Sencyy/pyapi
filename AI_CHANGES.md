@@ -18,6 +18,18 @@ When you modify this repository, you MUST keep this file up to date:
 
 ## Backend
 
+### 2026-08-15 — Fix paths broken by moving source files to src/
+- `justfile` now runs `fastapi dev src/main.py` instead of the former repo-root `main.py`.
+- `src/main.py` serves `static/index.html` from `Path(__file__).parent.parent` instead of
+  `Path(__file__).parent`, which now points inside `src/` and no longer exists.
+- `src/logger.py` anchors `execution.log` to the project root via a `LOG_PATH` constant based on
+  `__file__`, replacing the CWD-relative `../execution.log` that wrote to the launch directory's parent.
+- `src/database.py` anchors `database.db` via a `DB_PATH` constant based on `__file__`, replacing
+  the CWD-relative `sqlite3.connect("database.db")` calls.
+- `docker/dev/Dockerfile` now `COPY static /app/static` so `GET /` works inside the container.
+- Reason: moving the python files into `src/` broke every CWD-relative path and the
+  `Path(__file__).parent` static path.
+
 ### 2026-08-14 — Fix database connection leaks
 - All functions in `database.py` now open connections with `with sqlite3.connect(...)` context
   managers instead of leaving connections/transactions open.
