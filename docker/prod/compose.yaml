@@ -1,0 +1,15 @@
+services:
+  pyapi:
+    build:
+      context: ../../
+      dockerfile: ./docker/prod/Dockerfile
+    ports:
+      - "8000:8000"
+    environment: # you will want to change those little man (or girl idk)
+      - AUTH_USER=admin
+      - AUTH_PASS=admin
+    volumes:
+      - pyapi-data:/app
+
+volumes:
+  pyapi-data:

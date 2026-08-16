@@ -1,0 +1,6 @@
+venv
+__pycache__
+database.db
+execution.log
+.git
+docker
